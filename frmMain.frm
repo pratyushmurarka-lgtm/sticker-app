@@ -1576,6 +1576,8 @@ Private Sub cmdTabUsers_Click()
 
     
 
+    Call ClearUserFields
+
     Call LoadUserGrid
 
 End Sub
@@ -4757,6 +4759,11 @@ Private Sub fgUsers_Click()
         ' Lock UserID text box to prevent modifying user ID (primary key)
         txtUserID.Locked = True
         txtUserID.BackColor = &H00E0E0E0&
+        
+        ' Configure CRUD buttons for Edit/Delete mode
+        cmdAddUser.Enabled = False
+        cmdUpdateUser.Enabled = True
+        cmdDeleteUser.Enabled = True
     End If
 End Sub
 
@@ -4767,6 +4774,11 @@ Private Sub ClearUserFields()
     cboUserRole.ListIndex = -1
     txtUserID.Locked = False
     txtUserID.BackColor = &H00FFFFFF&
+    
+    ' Configure CRUD buttons for Add mode
+    cmdAddUser.Enabled = True
+    cmdUpdateUser.Enabled = False
+    cmdDeleteUser.Enabled = False
 End Sub
 
 ' Clear button click
