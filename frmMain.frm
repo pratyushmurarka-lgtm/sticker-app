@@ -327,7 +327,7 @@ Begin VB.Form frmMain
          BackColor       =   &H00E0E0E0&
          BorderStyle     =   1  'Fixed Single
          Height          =   300
-         Left            =   5800
+         Left            =   12200
          ScaleHeight     =   270
          ScaleWidth      =   4970
          TabIndex        =   45
@@ -357,7 +357,7 @@ Begin VB.Form frmMain
          EndProperty
          ForeColor       =   &H00C00000&
          Height          =   255
-         Left            =   5800
+         Left            =   12200
          TabIndex        =   47
          Top             =   800
          Visible         =   0  'False
@@ -372,10 +372,10 @@ Begin VB.Form frmMain
             Weight          =   700
          EndProperty
          Height          =   255
-         Left            =   5800
+         Left            =   5900
          TabIndex        =   48
-         Top             =   1350
-         Width           =   2500
+         Top             =   580
+         Width           =   2400
       End
       Begin VB.TextBox txtRegex 
          BeginProperty Font 
@@ -386,8 +386,8 @@ Begin VB.Form frmMain
          Height          =   350
          Left            =   8400
          TabIndex        =   49
-         Top             =   1300
-         Width           =   4000
+         Top             =   530
+         Width           =   3500
          Text            =   "\b\d{16}\b"
       End
       Begin VB.Label lblRegexHelp 
@@ -400,9 +400,9 @@ Begin VB.Form frmMain
          EndProperty
          ForeColor       =   &H00808080&
          Height          =   255
-         Left            =   5800
+         Left            =   5900
          TabIndex        =   50
-         Top             =   1750
+         Top             =   950
          Width           =   9000
       End
       Begin VB.CommandButton cmdImportPDF 
@@ -445,7 +445,7 @@ Begin VB.Form frmMain
 
          TabIndex        =   14
 
-         Top             =   1320
+         Top             =   1400
 
          Width           =   20300
 
@@ -1092,7 +1092,7 @@ Private Sub Form_Resize()
 
     fgPDF.Width = availWidth - 720
 
-    fgPDF.Height = availHeight - 1680
+    fgPDF.Height = availHeight - 1760
 
     
 
