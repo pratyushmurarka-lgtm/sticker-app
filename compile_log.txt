@@ -2,3 +2,5 @@
 Build of 'QRCodeGenerator.exe' succeeded.
 
 Build of 'QRCodeGenerator.exe' succeeded.
+
+Build of 'QRCodeGenerator.exe' succeeded.
