@@ -62,6 +62,22 @@ Begin VB.Form frmMain
 
       End
 
+      Begin VB.CommandButton cmdTabUsers 
+
+         Caption         =   "User Management"
+
+         Height          =   615
+
+         Left            =   120
+
+         TabIndex        =   51
+
+         Top             =   4080
+
+         Width           =   2535
+
+      End
+
       Begin VB.CommandButton cmdLogout 
 
          Caption         =   "Logout"
@@ -291,6 +307,274 @@ Begin VB.Form frmMain
          Top             =   480
 
          Width           =   1335
+
+      End
+
+   End
+
+   Begin VB.Frame fraUsers 
+
+      Caption         =   "User Management Control Panel"
+
+      BeginProperty Font 
+
+         Name            =   "Arial"
+
+         Size            =   9.75
+
+         Weight          =   700
+
+      EndProperty
+
+      Height          =   8895
+
+      Left            =   3000
+
+      TabIndex        =   52
+
+      Top             =   120
+
+      Width           =   12200
+
+      Visible         =   0   'False
+
+      Begin MSFlexGridLib.MSFlexGrid fgUsers 
+
+         Height          =   5500
+
+         Left            =   360
+
+         TabIndex        =   53
+
+         Top             =   1320
+
+         Width           =   11400
+
+         _ExtentX        =   20108
+
+         _ExtentY        =   9702
+
+         _Version        =   393216
+
+         Cols            =   3
+
+         FixedCols       =   0
+
+         FocusRect       =   0
+
+         SelectionMode   =   1
+
+      End
+
+      Begin VB.Label lblUserID 
+
+         BackStyle       =   0  'Transparent
+
+         Caption         =   "User ID:"
+
+         BeginProperty Font 
+
+            Name            =   "Arial"
+
+            Size            =   9.75
+
+            Weight          =   700
+
+         EndProperty
+
+         Height          =   255
+
+         Left            =   360
+
+         TabIndex        =   54
+
+         Top             =   7100
+
+         Width           =   1000
+
+      End
+
+      Begin VB.TextBox txtUserID 
+
+         BeginProperty Font 
+
+            Name            =   "Arial"
+
+            Size            =   9.75
+
+            Weight          =   400
+
+         EndProperty
+
+         Height          =   350
+
+         Left            =   1500
+
+         TabIndex        =   55
+
+         Top             =   7050
+
+         Width           =   2500
+
+      End
+
+      Begin VB.Label lblPassword 
+
+         BackStyle       =   0  'Transparent
+
+         Caption         =   "Password:"
+
+         BeginProperty Font 
+
+            Name            =   "Arial"
+
+            Size            =   9.75
+
+            Weight          =   700
+
+         EndProperty
+
+         Height          =   255
+
+         Left            =   4300
+
+         TabIndex        =   56
+
+         Top             =   7100
+
+         Width           =   1000
+
+      End
+
+      Begin VB.TextBox txtPassword 
+
+         BeginProperty Font 
+
+            Name            =   "Arial"
+
+            Size            =   9.75
+
+            Weight          =   400
+
+         EndProperty
+
+         Height          =   350
+
+         Left            =   5400
+
+         TabIndex        =   57
+
+         Top             =   7050
+
+         Width           =   2500
+
+      End
+
+      Begin VB.Label lblUserRole 
+
+         BackStyle       =   0  'Transparent
+
+         Caption         =   "Role:"
+
+         BeginProperty Font 
+
+            Name            =   "Arial"
+
+            Size            =   9.75
+
+            Weight          =   700
+
+         EndProperty
+
+         Height          =   255
+
+         Left            =   8200
+
+         TabIndex        =   58
+
+         Top             =   7100
+
+         Width           =   800
+
+      End
+
+      Begin VB.ComboBox cboUserRole 
+
+         Height          =   315
+
+         Left            =   9100
+
+         Style           =   2  'Dropdown List
+
+         TabIndex        =   59
+
+         Top             =   7050
+
+         Width           =   2000
+
+      End
+
+      Begin VB.CommandButton cmdAddUser 
+
+         Caption         =   "Add User"
+
+         Height          =   495
+
+         Left            =   360
+
+         TabIndex        =   60
+
+         Top             =   7700
+
+         Width           =   1800
+
+      End
+
+      Begin VB.CommandButton cmdUpdateUser 
+
+         Caption         =   "Update User"
+
+         Height          =   495
+
+         Left            =   2400
+
+         TabIndex        =   61
+
+         Top             =   7700
+
+         Width           =   1800
+
+      End
+
+      Begin VB.CommandButton cmdDeleteUser 
+
+         Caption         =   "Delete User"
+
+         Height          =   495
+
+         Left            =   4440
+
+         TabIndex        =   62
+
+         Top             =   7700
+
+         Width           =   1800
+
+      End
+
+      Begin VB.CommandButton cmdClearFields 
+
+         Caption         =   "Clear Fields"
+
+         Height          =   495
+
+         Left            =   6480
+
+         TabIndex        =   63
+
+         Top             =   7700
+
+         Width           =   1800
 
       End
 
@@ -1016,6 +1300,20 @@ Private Sub Form_Load()
 
     cmdTabReports.Enabled = GlobalCanViewReports
 
+    cmdTabUsers.Visible = GlobalCanManageUsers
+
+    
+
+    ' Populate User Role dropdown
+
+    cboUserRole.Clear
+
+    cboUserRole.AddItem "Operator"
+
+    cboUserRole.AddItem "Supervisor"
+
+    cboUserRole.AddItem "Admin"
+
     
 
     ' Adjust Grid layouts
@@ -1080,6 +1378,10 @@ Private Sub Form_Resize()
 
     fraReports.Height = availHeight
 
+    fraUsers.Width = availWidth
+
+    fraUsers.Height = availHeight
+
     
 
     ' Resize FlexGrid controls proportionately to fill frames
@@ -1099,6 +1401,50 @@ Private Sub Form_Resize()
     fgReports.Width = availWidth - 720
 
     fgReports.Height = availHeight - 1680
+
+    
+
+    fgUsers.Width = availWidth - 720
+
+    fgUsers.Height = availHeight - 3300
+
+    
+
+    ' Position User Management controls and buttons dynamically
+
+    Dim userControlsTop As Long
+
+    userControlsTop = fgUsers.Top + fgUsers.Height + 150
+
+    
+
+    lblUserID.Top = userControlsTop + 50
+
+    txtUserID.Top = userControlsTop
+
+    lblPassword.Top = userControlsTop + 50
+
+    txtPassword.Top = userControlsTop
+
+    lblUserRole.Top = userControlsTop + 50
+
+    cboUserRole.Top = userControlsTop
+
+    
+
+    Dim userButtonsTop As Long
+
+    userButtonsTop = fgUsers.Top + fgUsers.Height + 700
+
+    
+
+    cmdAddUser.Top = userButtonsTop
+
+    cmdUpdateUser.Top = userButtonsTop
+
+    cmdDeleteUser.Top = userButtonsTop
+
+    cmdClearFields.Top = userButtonsTop
 
     
 
@@ -1142,11 +1488,15 @@ Private Sub cmdTabGen_Click()
 
     fraReports.Visible = False
 
+    fraUsers.Visible = False
+
     cmdTabGen.FontBold = True
 
     cmdTabCust.FontBold = False
 
     cmdTabReports.FontBold = False
+
+    cmdTabUsers.FontBold = False
 
 End Sub
 
@@ -1160,11 +1510,15 @@ Private Sub cmdTabCust_Click()
 
     fraReports.Visible = False
 
+    fraUsers.Visible = False
+
     cmdTabGen.FontBold = False
 
     cmdTabCust.FontBold = True
 
     cmdTabReports.FontBold = False
+
+    cmdTabUsers.FontBold = False
 
 End Sub
 
@@ -1178,11 +1532,15 @@ Private Sub cmdTabReports_Click()
 
     fraReports.Visible = True
 
+    fraUsers.Visible = False
+
     cmdTabGen.FontBold = False
 
     cmdTabCust.FontBold = False
 
     cmdTabReports.FontBold = True
+
+    cmdTabUsers.FontBold = False
 
     
 
@@ -1193,6 +1551,32 @@ Private Sub cmdTabReports_Click()
     fgReports.Rows = 1
 
     fgReports.Cols = 5
+
+End Sub
+
+
+
+Private Sub cmdTabUsers_Click()
+
+    fraGen.Visible = False
+
+    fraCust.Visible = False
+
+    fraReports.Visible = False
+
+    fraUsers.Visible = True
+
+    cmdTabGen.FontBold = False
+
+    cmdTabCust.FontBold = False
+
+    cmdTabReports.FontBold = False
+
+    cmdTabUsers.FontBold = True
+
+    
+
+    Call LoadUserGrid
 
 End Sub
 
@@ -4300,5 +4684,213 @@ Private Sub UpdateImportProgress(ByVal currPage As Long, ByVal totalPages As Lon
 
     DoEvents
 
+End Sub
+
+
+
+' =========================================================================
+' User Management Screen Implementation
+' =========================================================================
+
+' Load users into fgUsers Grid
+Public Sub LoadUserGrid()
+    Dim rs As New ADODB.Recordset
+    Dim r As Integer
+    Dim w As Long
+    
+    On Error GoTo ErrHandler
+    
+    fgUsers.Clear
+    fgUsers.Rows = 1
+    
+    fgUsers.TextMatrix(0, 0) = "User ID"
+    fgUsers.TextMatrix(0, 1) = "Password"
+    fgUsers.TextMatrix(0, 2) = "Role"
+    
+    rs.Open "SELECT UserID, PasswordHash, UserRole FROM UserMaster ORDER BY UserID", Cn, adOpenStatic, adLockReadOnly
+    
+    r = 1
+    Do While Not rs.EOF
+        fgUsers.Rows = fgUsers.Rows + 1
+        fgUsers.TextMatrix(r, 0) = rs!UserID
+        fgUsers.TextMatrix(r, 1) = rs!PasswordHash
+        fgUsers.TextMatrix(r, 2) = rs!UserRole
+        rs.MoveNext
+        r = r + 1
+    Loop
+    rs.Close
+    
+    ' Fit columns
+    w = fgUsers.Width - 350
+    If w > 0 Then
+        fgUsers.ColWidth(0) = w * 0.35
+        fgUsers.ColWidth(1) = w * 0.35
+        fgUsers.ColWidth(2) = w * 0.3
+    End If
+    Exit Sub
+ErrHandler:
+    MsgBox "Error loading users: " & Err.Description, vbCritical, "Database Error"
+End Sub
+
+' Selection Click Event for fgUsers
+Private Sub fgUsers_Click()
+    Dim selectedRow As Integer
+    selectedRow = fgUsers.Row
+    
+    If selectedRow > 0 And selectedRow < fgUsers.Rows Then
+        txtUserID.Text = fgUsers.TextMatrix(selectedRow, 0)
+        txtPassword.Text = fgUsers.TextMatrix(selectedRow, 1)
+        
+        Dim role As String
+        role = fgUsers.TextMatrix(selectedRow, 2)
+        
+        If role = "Operator" Then
+            cboUserRole.ListIndex = 0
+        ElseIf role = "Supervisor" Then
+            cboUserRole.ListIndex = 1
+        ElseIf role = "Admin" Then
+            cboUserRole.ListIndex = 2
+        Else
+            cboUserRole.ListIndex = -1
+        End If
+        
+        ' Lock UserID text box to prevent modifying user ID (primary key)
+        txtUserID.Locked = True
+        txtUserID.BackColor = &H00E0E0E0&
+    End If
+End Sub
+
+' Clear UI user fields
+Private Sub ClearUserFields()
+    txtUserID.Text = ""
+    txtPassword.Text = ""
+    cboUserRole.ListIndex = -1
+    txtUserID.Locked = False
+    txtUserID.BackColor = &H00FFFFFF&
+End Sub
+
+' Clear button click
+Private Sub cmdClearFields_Click()
+    Call ClearUserFields
+End Sub
+
+' Add User Button Click Event
+Private Sub cmdAddUser_Click()
+    Dim uID As String
+    Dim uPass As String
+    Dim uRole As String
+    Dim sql As String
+    Dim rs As New ADODB.Recordset
+    
+    uID = Trim$(txtUserID.Text)
+    uPass = Trim$(txtPassword.Text)
+    If cboUserRole.ListIndex >= 0 Then
+        uRole = cboUserRole.List(cboUserRole.ListIndex)
+    Else
+        uRole = ""
+    End If
+    
+    If uID = "" Or uPass = "" Or uRole = "" Then
+        MsgBox "Please enter all details (User ID, Password, and Role).", vbExclamation, "Validation Error"
+        Exit Sub
+    End If
+    
+    On Error GoTo ErrHandler
+    
+    ' Check duplicate
+    rs.Open "SELECT UserID FROM UserMaster WHERE UserID = '" & Replace(uID, "'", "''") & "'", Cn, adOpenForwardOnly, adLockReadOnly
+    If Not rs.EOF Then
+        MsgBox "User ID already exists. Please choose a different User ID.", vbCritical, "Duplicate User"
+        rs.Close
+        Exit Sub
+    End If
+    rs.Close
+    
+    ' Insert user
+    sql = "INSERT INTO UserMaster (UserID, PasswordHash, UserRole) VALUES (" & _
+          "'" & Replace(uID, "'", "''") & "', " & _
+          "'" & Replace(uPass, "'", "''") & "', " & _
+          "'" & Replace(uRole, "'", "''") & "')"
+    Cn.Execute sql
+    
+    MsgBox "User '" & uID & "' added successfully.", vbInformation, "Success"
+    Call ClearUserFields
+    Call LoadUserGrid
+    Exit Sub
+ErrHandler:
+    MsgBox "Error adding user: " & Err.Description, vbCritical, "Database Error"
+End Sub
+
+' Update User Button Click Event
+Private Sub cmdUpdateUser_Click()
+    Dim uID As String
+    Dim uPass As String
+    Dim uRole As String
+    Dim sql As String
+    
+    uID = Trim$(txtUserID.Text)
+    uPass = Trim$(txtPassword.Text)
+    If cboUserRole.ListIndex >= 0 Then
+        uRole = cboUserRole.List(cboUserRole.ListIndex)
+    Else
+        uRole = ""
+    End If
+    
+    If uID = "" Or uPass = "" Or uRole = "" Then
+        MsgBox "Please select a user and fill in details.", vbExclamation, "Validation Error"
+        Exit Sub
+    End If
+    
+    On Error GoTo ErrHandler
+    
+    ' Update user in DB
+    sql = "UPDATE UserMaster SET " & _
+          "PasswordHash = '" & Replace(uPass, "'", "''") & "', " & _
+          "UserRole = '" & Replace(uRole, "'", "''") & "' " & _
+          "WHERE UserID = '" & Replace(uID, "'", "''") & "'"
+    Cn.Execute sql
+    
+    MsgBox "User '" & uID & "' updated successfully.", vbInformation, "Success"
+    Call ClearUserFields
+    Call LoadUserGrid
+    Exit Sub
+ErrHandler:
+    MsgBox "Error updating user: " & Err.Description, vbCritical, "Database Error"
+End Sub
+
+' Delete User Button Click Event
+Private Sub cmdDeleteUser_Click()
+    Dim uID As String
+    Dim sql As String
+    Dim ans As VbMsgBoxResult
+    
+    uID = Trim$(txtUserID.Text)
+    
+    If uID = "" Then
+        MsgBox "Please select a user to delete.", vbExclamation, "Validation Error"
+        Exit Sub
+    End If
+    
+    ' Safety check: Prevent Admin from deleting themselves
+    If LCase(uID) = LCase(GlobalUserID) Then
+        MsgBox "You cannot delete your own logged-in user account.", vbCritical, "Action Blocked"
+        Exit Sub
+    End If
+    
+    ans = MsgBox("Are you sure you want to delete user '" & uID & "'?", vbYesNo + vbQuestion + vbDefaultButton2, "Confirm Delete")
+    If ans = vbNo Then Exit Sub
+    
+    On Error GoTo ErrHandler
+    
+    ' Delete user from DB
+    sql = "DELETE FROM UserMaster WHERE UserID = '" & Replace(uID, "'", "''") & "'"
+    Cn.Execute sql
+    
+    MsgBox "User '" & uID & "' deleted successfully.", vbInformation, "Success"
+    Call ClearUserFields
+    Call LoadUserGrid
+    Exit Sub
+ErrHandler:
+    MsgBox "Error deleting user: " & Err.Description, vbCritical, "Database Error"
 End Sub
 
