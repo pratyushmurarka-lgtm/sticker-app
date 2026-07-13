@@ -63,9 +63,19 @@ body {
 .login-card {
     width: 100%;
     max-width: 420px;
-    border-radius: 16px;
-    padding: 40px 30px;
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 50px 40px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     animation: fadeIn 0.5s ease-out;
+    transition: transform 0.3s ease;
+}
+
+.login-card:hover {
+    transform: translateY(-2px);
 }
 
 .login-header {
@@ -81,6 +91,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
 }
 
 .logo-icon svg {
@@ -89,16 +100,67 @@ body {
 }
 
 .login-header h1 {
-    font-weight: 700;
+    font-weight: 800;
     font-size: 24px;
-    letter-spacing: 1.5px;
-    color: var(--text-primary);
-    margin-bottom: 5px;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
 }
 
 .login-header p {
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 400;
+}
+
+/* Login Input Icons and Styling */
+.input-icon-container {
+    position: relative;
+    width: 100%;
+}
+
+.input-icon-container .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-speed);
+}
+
+.input-icon-container .form-control.has-icon {
+    padding-left: 42px;
+}
+
+.input-icon-container .form-control:focus + .input-icon {
+    color: var(--primary);
+}
+
+#login-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+    transition: all 0.25s ease;
+    border: none;
+    font-size: 15px;
+    padding: 12px;
+}
+
+#login-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+    transform: translateY(-1px);
+}
+
+#login-btn:active:not(:disabled) {
+    transform: translateY(1px);
 }
 
 /* ---------------------------------------------------------
