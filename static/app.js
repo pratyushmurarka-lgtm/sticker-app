@@ -282,7 +282,7 @@ document.getElementById("next-preview-page").addEventListener("click", () => {
 document.getElementById("btn-print-sequential").addEventListener("click", async () => {
     if (!printAgentConnected || currentGeneratedQRs.length === 0) return;
     
-    const printer = document.getElementById("seq-printer-select").value;
+    const printer = "";
     const labelSize = document.getElementById("seq-label-size").value;
     const gap = document.getElementById("seq-gap").value;
     const topMargin = document.getElementById("seq-top-margin").value;
@@ -511,7 +511,7 @@ async function executePdfPrint(supervisorId) {
     const isRange = document.getElementById("pdf-range-check").checked;
     const fromPage = document.getElementById("pdf-from-page").value;
     const toPage = document.getElementById("pdf-to-page").value;
-    const printer = document.getElementById("pdf-printer-select").value;
+    const printer = "";
     
     let url = `/api/get_pdf_file/${selectedPdfId}`;
     if (isRange) {
