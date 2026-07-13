@@ -211,7 +211,7 @@ document.getElementById("btn-generate-qrs").addEventListener("click", async () =
     }
 });
 
-// Canvas preview rendering (Draws 4 labels horizontally)
+// Canvas preview rendering (Draws 4 labels horizontally using actual server-generated QRs)
 function drawPreviewPage() {
     const canvas = document.getElementById("preview-canvas");
     const ctx = canvas.getContext("2d");
@@ -235,7 +235,7 @@ function drawPreviewPage() {
         
         const qrValue = currentGeneratedQRs[idx];
         const parts = qrValue.split("|");
-        const labelText = parts.length >= 7 ? `${parts[2].strip ? parts[2].strip() : parts[2].trim()}-${parts[6].strip ? parts[6].strip() : parts[6].trim()}` : qrValue;
+        const labelText = parts.length >= 7 ? `${parts[2].trim()}-${parts[6].trim()}` : qrValue;
         
         const x = leftMargin + i * (labelSize + gap);
         
@@ -244,41 +244,12 @@ function drawPreviewPage() {
         ctx.lineWidth = 1;
         ctx.strokeRect(x, topMargin, labelSize, labelSize);
         
-        // 2. Draw mock QR code graphics
-        ctx.fillStyle = "#000000";
-        // Top-left finder pattern
-        ctx.fillRect(x + 10, topMargin + 10, 25, 25);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(x + 15, topMargin + 15, 15, 15);
-        ctx.fillStyle = "#000000";
-        ctx.fillRect(x + 18, topMargin + 18, 9, 9);
-        
-        // Top-right finder pattern
-        ctx.fillRect(x + labelSize - 35, topMargin + 10, 25, 25);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(x + labelSize - 30, topMargin + 15, 15, 15);
-        ctx.fillStyle = "#000000";
-        ctx.fillRect(x + labelSize - 27, topMargin + 18, 9, 9);
-        
-        // Bottom-left finder pattern
-        ctx.fillRect(x + 10, topMargin + labelSize - 35, 25, 25);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(x + 15, topMargin + labelSize - 30, 15, 15);
-        ctx.fillStyle = "#000000";
-        ctx.fillRect(x + 18, topMargin + labelSize - 27, 9, 9);
-        
-        // Center alignment pattern (simplified)
-        ctx.fillRect(x + labelSize - 30, topMargin + labelSize - 30, 10, 10);
-        
-        // Random dots (mocking QR data payload)
-        ctx.fillStyle = "#000000";
-        for (let row = 0; row < 5; row++) {
-            for (let col = 0; col < 5; col++) {
-                if (Math.random() > 0.5) {
-                    ctx.fillRect(x + 40 + col * 5, topMargin + 40 + row * 5, 4, 4);
-                }
-            }
-        }
+        // 2. Draw actual QR code from server
+        const img = new Image();
+        img.src = `/api/qr_image?text=${encodeURIComponent(qrValue)}`;
+        img.onload = () => {
+            ctx.drawImage(img, x + 2, topMargin + 2, labelSize - 4, labelSize - 4);
+        };
         
         // 3. Draw description label text below QR code
         ctx.fillStyle = "#000000";

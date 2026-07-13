@@ -1,6 +1,8 @@
 import os
 import re
 import datetime
+import io
+import segno
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session, send_file
 import database
 import pdf_handler
@@ -516,6 +518,21 @@ def update_delete_user(username):
             return jsonify({"success": True, "message": f"User '{username}' deleted successfully."})
         except Exception as e:
             return jsonify({"success": False, "message": f"Database error: {str(e)}"}), 500
+
+@app.route("/api/qr_image")
+def get_qr_image():
+    text = request.args.get("text", "")
+    if not text:
+        return "Missing text", 400
+    try:
+        qr = segno.make(text, error='M')
+        qr_img = qr.to_pil(scale=10, border=1)
+        buf = io.BytesIO()
+        qr_img.save(buf, format="PNG")
+        buf.seek(0)
+        return send_file(buf, mimetype="image/png")
+    except Exception as e:
+        return str(e), 500
 
 # ---------------------------------------------------------
 # Start Server
