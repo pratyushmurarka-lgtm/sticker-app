@@ -107,18 +107,136 @@ async function loadModels() {
         const seqSelect = document.getElementById("seq-item-select");
         const pdfSelect = document.getElementById("pdf-item-select");
         
+        // Populate normal PDF import dropdown
         const optHtml = ['<option value="">-- Select Model --</option>']
             .concat(items.map(item => `<option value="${item.CodeStr}">${item.CodeStr} - ${item.Name}</option>`))
             .join("");
-            
-        seqSelect.innerHTML = optHtml;
         pdfSelect.innerHTML = optHtml;
+        
+        // Set up the custom searchable dropdown for the sequential tab
+        setupSearchableDropdown(items);
         
         // Load last serial when sequential item select changes
         seqSelect.addEventListener("change", updateLastSerialDisplay);
         
     } catch (err) {
         showGlobalAlert("Failed to load models from database server.", "danger");
+    }
+}
+
+// Custom Searchable Dropdown Layout logic (Android-contacts-like real-time filtering)
+function setupSearchableDropdown(items) {
+    const searchInput = document.getElementById("seq-item-search");
+    const hiddenSelect = document.getElementById("seq-item-select");
+    const optionsList = document.getElementById("seq-item-options-list");
+    let highlightedIndex = -1;
+    
+    function renderOptions(filterText = "") {
+        optionsList.innerHTML = "";
+        highlightedIndex = -1;
+        
+        const filtered = items.filter(item => {
+            const searchStr = `${item.CodeStr} ${item.Name}`.toLowerCase();
+            return searchStr.includes(filterText.toLowerCase());
+        });
+        
+        if (filtered.length === 0) {
+            const noResults = document.createElement("div");
+            noResults.className = "searchable-select-no-results";
+            noResults.textContent = "No matching models found";
+            optionsList.appendChild(noResults);
+            return;
+        }
+        
+        filtered.forEach((item, index) => {
+            const div = document.createElement("div");
+            div.className = "searchable-select-item";
+            div.dataset.value = item.CodeStr;
+            div.dataset.index = index;
+            div.textContent = `${item.CodeStr} - ${item.Name}`;
+            
+            // Use mousedown to prevent blur race condition
+            div.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                selectItem(item);
+            });
+            
+            optionsList.appendChild(div);
+        });
+    }
+    
+    function selectItem(item) {
+        searchInput.value = `${item.CodeStr} - ${item.Name}`;
+        hiddenSelect.value = item.CodeStr;
+        optionsList.classList.add("hide");
+        
+        // Trigger change event to load last serial automatically
+        const event = new Event('change');
+        hiddenSelect.dispatchEvent(event);
+    }
+    
+    // Toggle options list when input is focused
+    searchInput.addEventListener("focus", () => {
+        renderOptions(searchInput.value);
+        optionsList.classList.remove("hide");
+    });
+    
+    // Close options list when input loses focus
+    searchInput.addEventListener("blur", () => {
+        setTimeout(() => {
+            optionsList.classList.add("hide");
+        }, 150);
+    });
+    
+    // Filter list on keyup
+    searchInput.addEventListener("input", () => {
+        if (!searchInput.value.trim()) {
+            hiddenSelect.value = "";
+            const event = new Event('change');
+            hiddenSelect.dispatchEvent(event);
+        }
+        renderOptions(searchInput.value);
+        optionsList.classList.remove("hide");
+    });
+    
+    // Keyboard navigation (Arrow keys + Enter + Escape)
+    searchInput.addEventListener("keydown", (e) => {
+        const itemElems = optionsList.querySelectorAll(".searchable-select-item");
+        if (itemElems.length === 0) return;
+        
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            highlightedIndex = (highlightedIndex + 1) % itemElems.length;
+            updateHighlight(itemElems);
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            highlightedIndex = (highlightedIndex - 1 + itemElems.length) % itemElems.length;
+            updateHighlight(itemElems);
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            if (highlightedIndex >= 0 && highlightedIndex < itemElems.length) {
+                const selectedValue = itemElems[highlightedIndex].dataset.value;
+                const foundItem = items.find(item => item.CodeStr === selectedValue);
+                if (foundItem) {
+                    selectItem(foundItem);
+                    searchInput.blur();
+                }
+            }
+        } else if (e.key === "Escape") {
+            optionsList.classList.add("hide");
+            searchInput.blur();
+        }
+    });
+    
+    function updateHighlight(itemElems) {
+        itemElems.forEach((item, idx) => {
+            if (idx === highlightedIndex) {
+                item.classList.add("highlighted");
+                item.scrollIntoView({ block: "nearest" });
+            } else {
+                item.classList.remove("highlighted");
+            }
+        });
     }
 }
 

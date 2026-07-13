@@ -658,3 +658,53 @@ label {
         transform: translateY(0);
     }
 }
+
+/* Searchable Select Dropdown styles */
+.searchable-select-container {
+    position: relative;
+}
+
+.searchable-select {
+    position: relative;
+    width: 100%;
+}
+
+.searchable-select-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin-top: 4px;
+    background-color: #0f172a;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 4px 0;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.5);
+}
+
+.searchable-select-item {
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: background-color var(--transition-speed);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.searchable-select-item:hover,
+.searchable-select-item.highlighted {
+    background-color: var(--primary);
+    color: white;
+}
+
+.searchable-select-no-results {
+    padding: 8px 14px;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-style: italic;
+}

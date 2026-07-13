@@ -51,11 +51,15 @@
                 <h3>Sequential Generation & Label Printing</h3>
                 <div class="tab-layout">
                     <div class="controls-panel">
-                        <div class="form-group">
-                            <label for="seq-item-select">Select Model / Item Code</label>
-                            <select id="seq-item-select" class="form-control">
-                                <option value="">-- Load Models --</option>
-                            </select>
+                        <div class="form-group searchable-select-container">
+                            <label for="seq-item-search">Select Model / Item Code</label>
+                            <div class="searchable-select" id="seq-item-dropdown">
+                                <input type="text" id="seq-item-search" class="form-control searchable-select-input" placeholder="Type to search model..." autocomplete="off">
+                                <input type="hidden" id="seq-item-select" value="">
+                                <div class="searchable-select-options card hide" id="seq-item-options-list">
+                                    <!-- Dynamic options list -->
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="form-group">
