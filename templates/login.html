@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Printing & Management System - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-body">
+    <div class="login-card glass">
+        <div class="login-header">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <rect x="7" y="7" width="3" height="3"/>
+                    <rect x="14" y="7" width="3" height="3"/>
+                    <rect x="7" y="14" width="3" height="3"/>
+                    <path d="M14 14h3v3h-3z"/>
+                </svg>
+            </div>
+            <h1>QR SYSTEM</h1>
+            <p>Enter your credentials to log in</p>
+        </div>
+        
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <div class="input-container">
+                    <input type="text" id="username" name="username" placeholder="e.g., admin" required autocomplete="off">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-container">
+                    <input type="password" id="password" name="password" placeholder="••••••••" required>
+                </div>
+            </div>
+            
+            <button type="submit" id="login-btn" class="btn btn-primary btn-block">
+                <span>Sign In</span>
+            </button>
+            
+            <div id="error-message" class="alert alert-danger hide"></div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn');
+            const errorMsg = document.getElementById('error-message');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span>Verifying...</span>';
+            errorMsg.classList.add('hide');
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.location.href = '/dashboard';
+                } else {
+                    errorMsg.innerText = result.message || 'Login failed.';
+                    errorMsg.classList.remove('hide');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Sign In</span>';
+                }
+            } catch (err) {
+                errorMsg.innerText = 'Unable to connect to the server.';
+                errorMsg.classList.remove('hide');
+                btn.disabled = false;
+                btn.innerHTML = '<span>Sign In</span>';
+            }
+        });
+    </script>
+</body>
+</html>

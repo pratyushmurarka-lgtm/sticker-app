@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Printing & Management System - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-body">
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar glass">
+            <div class="sidebar-header">
+                <h2>QR DASHBOARD</h2>
+                <div class="user-profile">
+                    <span class="user-label">User:</span>
+                    <span id="current-user-id" class="user-value">{{ user_id }}</span>
+                    <span class="user-label">Role:</span>
+                    <span class="user-badge">{{ user_role }}</span>
+                    <span class="user-label">Items Loaded:</span>
+                    <span class="user-value">{{ items_loaded }}</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <button class="menu-item active" data-target="sequential-tab">Sequential Generation</button>
+                <button class="menu-item" data-target="customer-pdf-tab">Customer PDF Operations</button>
+                <button class="menu-item" data-target="reports-tab">Operational Reports</button>
+                {% if user_role == 'Admin' %}
+                <button class="menu-item" data-target="user-management-tab">User Management</button>
+                {% endif %}
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="agent-status-indicator">
+                    <span class="status-dot red" id="agent-status-dot"></span>
+                    <span id="agent-status-text">Print Agent: Offline</span>
+                </div>
+                <a href="/logout" class="btn btn-danger btn-block">Logout</a>
+            </div>
+        </aside>
+
+        <!-- Main Content Panel -->
+        <main class="main-content">
+            <!-- Alert Banner -->
+            <div id="global-alert" class="alert hide"></div>
+
+            <!-- Tab Content: Sequential Generation -->
+            <section id="sequential-tab" class="tab-pane active glass">
+                <h3>Sequential Generation & Label Printing</h3>
+                <div class="tab-layout">
+                    <div class="controls-panel">
+                        <div class="form-group">
+                            <label for="seq-item-select">Select Model / Item Code</label>
+                            <select id="seq-item-select" class="form-control">
+                                <option value="">-- Load Models --</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="seq-qty">Total Quantity to Print</label>
+                            <input type="number" id="seq-qty" class="form-control" min="1" max="10000" value="10">
+                        </div>
+                        
+                        <div class="last-serial-box card">
+                            <span id="last-generated-serial">Last Generated QR: Loading...</span>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col">
+                                <label for="seq-label-size">Label Size (mm)</label>
+                                <input type="number" id="seq-label-size" class="form-control" min="10" max="100" value="25" step="1">
+                            </div>
+                            <div class="form-group col">
+                                <label for="seq-gap">Gap Between (mm)</label>
+                                <input type="number" id="seq-gap" class="form-control" min="1" max="50" value="3" step="1">
+                            </div>
+                            <div class="form-group col">
+                                <label for="seq-top-margin">Top Margin (mm)</label>
+                                <input type="number" id="seq-top-margin" class="form-control" min="0" max="100" value="5" step="1">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="seq-printer-select">Local Printer Selection</label>
+                            <select id="seq-printer-select" class="form-control printer-dropdown">
+                                <option value="">-- No Print Agent Connected --</option>
+                            </select>
+                        </div>
+
+                        <div class="button-row">
+                            <button id="btn-generate-qrs" class="btn btn-primary">Generate QR codes</button>
+                            <button id="btn-print-sequential" class="btn btn-success" disabled>Print Current Batch</button>
+                        </div>
+                    </div>
+
+                    <div class="preview-panel">
+                        <h4>Label layout preview (Fits 4 horizontally per page)</h4>
+                        <div class="canvas-wrapper card">
+                            <canvas id="preview-canvas" width="600" height="250"></canvas>
+                        </div>
+                        <div class="preview-controls">
+                            <button id="prev-preview-page" class="btn btn-outline" disabled>&lt; Prev</button>
+                            <span id="preview-page-info">Page 1 of 1</span>
+                            <button id="next-preview-page" class="btn btn-outline" disabled>Next &gt;</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Customer PDF Operations -->
+            <section id="customer-pdf-tab" class="tab-pane glass">
+                <h3>Customer PDF QR Parsing & Sheet Printing</h3>
+                <div class="tab-layout">
+                    <div class="controls-panel">
+                        <form id="pdf-import-form" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="pdf-item-select">Select Model / Item Code</label>
+                                <select id="pdf-item-select" name="item_code" class="form-control" required>
+                                    <option value="">-- Load Models --</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="pdf-regex">Regex Pattern (QR Code format)</label>
+                                <input type="text" id="pdf-regex" name="regex_pattern" class="form-control" value="\b\d{16}\b" required>
+                                <small class="form-text text-muted">Default pattern \b\d{16}\b scans for exactly 16-digit barcodes.</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="pdf-file">Select Customer PDF File</label>
+                                <input type="file" id="pdf-file" name="pdf_file" class="form-control-file" accept="application/pdf" required>
+                            </div>
+                            
+                            <button type="submit" id="btn-import-pdf" class="btn btn-primary btn-block">Verify and Import PDF</button>
+                        </form>
+                        
+                        <div id="import-progress-container" class="form-group hide">
+                            <label>Parsing PDF file... Please wait.</label>
+                            <div class="progress-bar-outer">
+                                <div id="import-progress-inner" class="progress-bar-inner" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4 print-options-card">
+                            <h4>Printing Page Config</h4>
+                            <div class="form-group-checkbox">
+                                <input type="checkbox" id="pdf-range-check">
+                                <label for="pdf-range-check">Print Custom Page Range</label>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col">
+                                    <label for="pdf-from-page">From Page</label>
+                                    <input type="number" id="pdf-from-page" class="form-control" min="1" value="1" disabled>
+                                </div>
+                                <div class="form-group col">
+                                    <label for="pdf-to-page">To Page</label>
+                                    <input type="number" id="pdf-to-page" class="form-control" min="1" value="1" disabled>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="pdf-printer-select">Local Printer Selection</label>
+                                <select id="pdf-printer-select" class="form-control printer-dropdown">
+                                    <option value="">-- No Print Agent Connected --</option>
+                                </select>
+                            </div>
+                            <button id="btn-print-pdf" class="btn btn-success btn-block" disabled>Print Selected PDF</button>
+                        </div>
+                    </div>
+
+                    <div class="grid-panel">
+                        <h4>Imported Customer PDF Records</h4>
+                        <div class="grid-wrapper card">
+                            <table class="data-table" id="pdf-grid">
+                                <thead>
+                                    <tr>
+                                        <th>PDF ID</th>
+                                        <th>Model</th>
+                                        <th>Filename</th>
+                                        <th>Total Qty</th>
+                                        <th>Printed?</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="5" class="text-center">Loading imported records...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: Operational Reports -->
+            <section id="reports-tab" class="tab-pane glass">
+                <h3>Operational SQL Audit Reports</h3>
+                <div class="report-filters card">
+                    <div class="form-row align-center">
+                        <div class="form-group flex-2">
+                            <label for="report-select">Select Report Type</label>
+                            <select id="report-select" class="form-control">
+                                <option value="0">1. Supervisor Reprint Audit Trail</option>
+                                <option value="1">2. Registry vs Packing Scan Reconciliation</option>
+                                <option value="2">3. Customer PDF Fulfillment Status</option>
+                                <option value="3">4. Daily Production Summary</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex-1 btn-align">
+                            <button id="btn-load-report" class="btn btn-primary btn-block">Load Audit Report</button>
+                        </div>
+                        <div class="form-group flex-1 btn-align">
+                            <button id="btn-export-csv" class="btn btn-outline btn-block" disabled>Export to CSV</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid-panel mt-4">
+                    <div class="grid-wrapper card report-grid-wrapper">
+                        <table class="data-table" id="reports-grid">
+                            <thead>
+                                <tr>
+                                    <th colspan="5" class="text-center">Select a report and click "Load Audit Report"</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab Content: User Management (Admin Only) -->
+            {% if user_role == 'Admin' %}
+            <section id="user-management-tab" class="tab-pane glass">
+                <h3>User Master Credentials Management</h3>
+                <div class="tab-layout">
+                    <div class="controls-panel">
+                        <div class="form-group">
+                            <label for="user-id-input">User ID (Primary Key)</label>
+                            <input type="text" id="user-id-input" class="form-control" placeholder="Enter User ID" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="user-password-input">Password Hash</label>
+                            <input type="password" id="user-password-input" class="form-control" placeholder="Enter Password">
+                        </div>
+                        <div class="form-group">
+                            <label for="user-role-select">User Role</label>
+                            <select id="user-role-select" class="form-control">
+                                <option value="Operator">Operator</option>
+                                <option value="Supervisor">Supervisor</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                        
+                        <div class="crud-buttons">
+                            <button id="btn-user-add" class="btn btn-success">Add User</button>
+                            <button id="btn-user-update" class="btn btn-primary" disabled>Update User</button>
+                            <button id="btn-user-delete" class="btn btn-danger" disabled>Delete User</button>
+                            <button id="btn-user-clear" class="btn btn-outline">Clear Fields</button>
+                        </div>
+                    </div>
+
+                    <div class="grid-panel">
+                        <h4>Active Database Users</h4>
+                        <div class="grid-wrapper card">
+                            <table class="data-table" id="users-grid">
+                                <thead>
+                                    <tr>
+                                        <th>User ID</th>
+                                        <th>Password Hash</th>
+                                        <th>Role</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="3" class="text-center">Loading users...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Supervisor Authentication Modal -->
+    <div id="supervisor-modal" class="modal-overlay hide">
+        <div class="modal-box glass">
+            <h3>Supervisor/Admin Authorization Required</h3>
+            <p>You are attempting to reprint a PDF sheet. Please verify supervisor credentials to proceed.</p>
+            <div class="form-group">
+                <label for="super-username">Supervisor User ID</label>
+                <input type="text" id="super-username" class="form-control" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label for="super-password">Password</label>
+                <input type="password" id="super-password" class="form-control">
+            </div>
+            <div id="modal-error" class="alert alert-danger hide"></div>
+            <div class="modal-footer">
+                <button id="btn-modal-cancel" class="btn btn-outline">Cancel</button>
+                <button id="btn-modal-authorize" class="btn btn-success">Authorize & Print</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

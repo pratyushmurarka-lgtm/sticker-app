@@ -1,0 +1,5 @@
+flask
+pyodbc
+pypdf
+segno
+pywin32
