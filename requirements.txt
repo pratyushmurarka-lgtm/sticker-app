@@ -3,3 +3,4 @@ pyodbc
 pypdf
 segno
 pywin32
+pillow
