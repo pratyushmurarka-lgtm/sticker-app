@@ -912,6 +912,36 @@ function initUserManagement() {
     const btnDelete = document.getElementById("btn-user-delete");
     const btnClear = document.getElementById("btn-user-clear");
     
+    // Elements for checkboxes
+    const permGenerate = document.getElementById("perm-generate");
+    const permImport = document.getElementById("perm-import");
+    const permReprint = document.getElementById("perm-reprint");
+    const permReports = document.getElementById("perm-reports");
+    const permUsers = document.getElementById("perm-users");
+
+    roleField.addEventListener("change", () => {
+        const val = roleField.value;
+        if (val === "Admin") {
+            permGenerate.checked = true;
+            permImport.checked = true;
+            permReprint.checked = true;
+            permReports.checked = true;
+            permUsers.checked = true;
+        } else if (val === "Supervisor") {
+            permGenerate.checked = true;
+            permImport.checked = true;
+            permReprint.checked = true;
+            permReports.checked = true;
+            permUsers.checked = false;
+        } else {
+            permGenerate.checked = true;
+            permImport.checked = false;
+            permReprint.checked = false;
+            permReports.checked = false;
+            permUsers.checked = false;
+        }
+    });
+
     async function loadUserGrid() {
         try {
             const response = await fetch("/api/users");
@@ -932,6 +962,13 @@ function initUserManagement() {
                     userField.value = u.UserID;
                     passField.value = u.PasswordHash;
                     roleField.value = u.UserRole;
+                    
+                    // Set checkboxes
+                    permGenerate.checked = u.CanGenerateQR === 1 || u.CanGenerateQR === true;
+                    permImport.checked = u.CanImportPDF === 1 || u.CanImportPDF === true;
+                    permReprint.checked = u.CanReprint === 1 || u.CanReprint === true;
+                    permReports.checked = u.CanViewReports === 1 || u.CanViewReports === true;
+                    permUsers.checked = u.CanManageUsers === 1 || u.CanManageUsers === true;
                     
                     // Lock User ID (primary key modification safety)
                     userField.disabled = true;
@@ -958,6 +995,12 @@ function initUserManagement() {
         roleField.value = "Operator";
         userField.disabled = false;
         
+        permGenerate.checked = true;
+        permImport.checked = false;
+        permReprint.checked = false;
+        permReports.checked = false;
+        permUsers.checked = false;
+        
         grid.querySelectorAll("tbody tr").forEach(r => r.classList.remove("selected"));
         
         btnAdd.disabled = false;
@@ -973,6 +1016,12 @@ function initUserManagement() {
         const password = passField.value.trim();
         const role = roleField.value;
         
+        const can_generate = permGenerate.checked;
+        const can_import = permImport.checked;
+        const can_reprint = permReprint.checked;
+        const can_reports = permReports.checked;
+        const can_users = permUsers.checked;
+        
         if (!username || !password || !role) {
             showGlobalAlert("Please fill in all user credentials details.", "danger");
             return;
@@ -982,7 +1031,10 @@ function initUserManagement() {
             const response = await fetch("/api/users", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password, role })
+                body: JSON.stringify({ 
+                    username, password, role,
+                    can_generate, can_import, can_reprint, can_reports, can_users 
+                })
             });
             const result = await response.json();
             
@@ -1004,6 +1056,12 @@ function initUserManagement() {
         const password = passField.value.trim();
         const role = roleField.value;
         
+        const can_generate = permGenerate.checked;
+        const can_import = permImport.checked;
+        const can_reprint = permReprint.checked;
+        const can_reports = permReports.checked;
+        const can_users = permUsers.checked;
+        
         if (!username || !password || !role) {
             showGlobalAlert("Missing fields.", "danger");
             return;
@@ -1013,7 +1071,10 @@ function initUserManagement() {
             const response = await fetch(`/api/users/${encodeURIComponent(username)}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password, role })
+                body: JSON.stringify({ 
+                    password, role,
+                    can_generate, can_import, can_reprint, can_reports, can_users 
+                })
             });
             const result = await response.json();
             

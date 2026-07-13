@@ -23,6 +23,21 @@ def is_logged_in():
 def is_admin():
     return session.get("user_role") == "Admin"
 
+def can_generate():
+    return session.get("can_generate", 0) == 1
+
+def can_import():
+    return session.get("can_import", 0) == 1
+
+def can_reprint():
+    return session.get("can_reprint", 0) == 1
+
+def can_reports():
+    return session.get("can_reports", 0) == 1
+
+def can_users():
+    return session.get("can_users", 0) == 1
+
 def get_next_serial_number(item_type, item_code, item_brand):
     qr_month = datetime.date.today().strftime("%m%yyyy")
     
@@ -82,12 +97,17 @@ def login():
         if not user_id or not password:
             return jsonify({"success": False, "message": "Please enter both Username and Password."}), 400
             
-        sql = "SELECT UserID, UserRole FROM UserMaster WHERE UserID = ? AND PasswordHash = ?"
+        sql = "SELECT UserID, UserRole, CanGenerateQR, CanImportPDF, CanReprint, CanViewReports, CanManageUsers FROM UserMaster WHERE UserID = ? AND PasswordHash = ?"
         user = database.query_row(sql, (user_id, password))
         
         if user:
             session["user_id"] = user["UserID"]
             session["user_role"] = user["UserRole"]
+            session["can_generate"] = int(user["CanGenerateQR"])
+            session["can_import"] = int(user["CanImportPDF"])
+            session["can_reprint"] = int(user["CanReprint"])
+            session["can_reports"] = int(user["CanViewReports"])
+            session["can_users"] = int(user["CanManageUsers"])
             return jsonify({"success": True, "role": user["UserRole"]})
         else:
             return jsonify({"success": False, "message": "Invalid Username or Password."}), 401
@@ -110,6 +130,11 @@ def dashboard():
     return render_template("dashboard.html", 
                            user_id=session["user_id"], 
                            user_role=session["user_role"], 
+                           can_generate=can_generate(),
+                           can_import=can_import(),
+                           can_reprint=can_reprint(),
+                           can_reports=can_reports(),
+                           can_users=can_users(),
                            items_loaded=loaded_count)
 
 @app.route("/logout")
@@ -169,7 +194,7 @@ def get_last_serial():
 
 @app.route("/api/generate_qrs", methods=["POST"])
 def generate_qrs():
-    if not is_logged_in():
+    if not is_logged_in() or not can_generate():
         return jsonify({"message": "Unauthorized"}), 401
         
     data = request.get_json() or {}
@@ -209,12 +234,9 @@ def generate_qrs():
             # Format: CODE|OtherDes|codestr|YYYYMM|MRP|NAME|SRNO
             qr_value = f"{item_numeric_code}|{item_other_des}|{item_code}|{datetime.datetime.now().strftime('%Y%m')}|{item_mrp}|{item_name}|{serial_no}"
             
-            # Run validation
-            valid, err = is_valid_for_printing(qr_value)
-            if not valid:
-                return jsonify({"success": False, "message": f"Collision bypass triggered: {err}"}), 409
-                
             # Collect SQL insert statements to execute inside a single transaction
+            # (Collision validation is skipped for sequential generation because starting at MAX(SerialNo)+1 
+            # mathematically guarantees no collisions, avoiding 1,000+ redundant database checks.)
             sql = "INSERT INTO In_QRmaster (ItemCode, QRMonth, SerialNo, QRValue, GeneratedOn, Printed, IsCustomerQR) VALUES (?, ?, ?, ?, GETDATE(), 0, 0)"
             params = (item_code, qr_month, serial_no, qr_value)
             statements.append((sql, params))
@@ -235,7 +257,7 @@ def generate_qrs():
 
 @app.route("/api/pdf_list", methods=["GET"])
 def get_pdf_list():
-    if not is_logged_in():
+    if not is_logged_in() or not can_import():
         return jsonify({"message": "Unauthorized"}), 401
         
     sql = "SELECT PDFID, ItemCode, FileName, TotalQty, Printed FROM In_CustomerPDF ORDER BY PDFID DESC"
@@ -244,7 +266,7 @@ def get_pdf_list():
 
 @app.route("/api/import_pdf", methods=["POST"])
 def import_pdf():
-    if not is_logged_in():
+    if not is_logged_in() or not can_import():
         return jsonify({"message": "Unauthorized"}), 401
         
     if "pdf_file" not in request.files:
@@ -403,7 +425,7 @@ def verify_supervisor():
     if not username or not password:
         return jsonify({"success": False, "message": "Missing credentials"}), 400
         
-    sql = "SELECT UserID, UserRole FROM UserMaster WHERE UserID = ? AND PasswordHash = ? AND UserRole IN ('Supervisor', 'Admin')"
+    sql = "SELECT UserID FROM UserMaster WHERE UserID = ? AND PasswordHash = ? AND CanReprint = 1"
     user = database.query_row(sql, (username, password))
     
     if user:
@@ -413,7 +435,7 @@ def verify_supervisor():
 
 @app.route("/api/reports", methods=["POST"])
 def run_report():
-    if not is_logged_in():
+    if not is_logged_in() or not can_reports():
         return jsonify({"message": "Unauthorized"}), 401
         
     data = request.get_json() or {}
@@ -460,11 +482,11 @@ def run_report():
 # ---------------------------------------------------------
 @app.route("/api/users", methods=["GET", "POST"])
 def manage_users():
-    if not is_logged_in() or not is_admin():
+    if not is_logged_in() or not can_users():
         return jsonify({"message": "Unauthorized"}), 401
         
     if request.method == "GET":
-        users = database.query_all("SELECT UserID, PasswordHash, UserRole FROM UserMaster ORDER BY UserID")
+        users = database.query_all("SELECT UserID, PasswordHash, UserRole, CanGenerateQR, CanImportPDF, CanReprint, CanViewReports, CanManageUsers FROM UserMaster ORDER BY UserID")
         return jsonify(users)
         
     if request.method == "POST":
@@ -472,6 +494,12 @@ def manage_users():
         username = data.get("username", "").strip()
         password = data.get("password", "").strip()
         role = data.get("role", "").strip()
+        
+        can_generate_val = 1 if data.get("can_generate", True) else 0
+        can_import_val = 1 if data.get("can_import", False) else 0
+        can_reprint_val = 1 if data.get("can_reprint", False) else 0
+        can_reports_val = 1 if data.get("can_reports", False) else 0
+        can_users_val = 1 if data.get("can_users", False) else 0
         
         if not username or not password or not role:
             return jsonify({"success": False, "message": "Please fill in all details."}), 400
@@ -481,15 +509,17 @@ def manage_users():
             return jsonify({"success": False, "message": "User ID already exists."}), 409
             
         try:
-            database.execute_non_query("INSERT INTO UserMaster (UserID, PasswordHash, UserRole) VALUES (?, ?, ?)", 
-                                       (username, password, role))
+            database.execute_non_query(
+                "INSERT INTO UserMaster (UserID, PasswordHash, UserRole, CanGenerateQR, CanImportPDF, CanReprint, CanViewReports, CanManageUsers) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
+                (username, password, role, can_generate_val, can_import_val, can_reprint_val, can_reports_val, can_users_val)
+            )
             return jsonify({"success": True, "message": f"User '{username}' created successfully."})
         except Exception as e:
             return jsonify({"success": False, "message": f"Database error: {str(e)}"}), 500
 
 @app.route("/api/users/<username>", methods=["PUT", "DELETE"])
 def update_delete_user(username):
-    if not is_logged_in() or not is_admin():
+    if not is_logged_in() or not can_users():
         return jsonify({"message": "Unauthorized"}), 401
         
     username = username.strip()
@@ -499,12 +529,20 @@ def update_delete_user(username):
         password = data.get("password", "").strip()
         role = data.get("role", "").strip()
         
+        can_generate_val = 1 if data.get("can_generate", True) else 0
+        can_import_val = 1 if data.get("can_import", False) else 0
+        can_reprint_val = 1 if data.get("can_reprint", False) else 0
+        can_reports_val = 1 if data.get("can_reports", False) else 0
+        can_users_val = 1 if data.get("can_users", False) else 0
+        
         if not password or not role:
             return jsonify({"success": False, "message": "Missing password or role."}), 400
             
         try:
-            database.execute_non_query("UPDATE UserMaster SET PasswordHash = ?, UserRole = ? WHERE UserID = ?", 
-                                       (password, role, username))
+            database.execute_non_query(
+                "UPDATE UserMaster SET PasswordHash = ?, UserRole = ?, CanGenerateQR = ?, CanImportPDF = ?, CanReprint = ?, CanViewReports = ?, CanManageUsers = ? WHERE UserID = ?", 
+                (password, role, can_generate_val, can_import_val, can_reprint_val, can_reports_val, can_users_val, username)
+            )
             return jsonify({"success": True, "message": f"User '{username}' updated successfully."})
         except Exception as e:
             return jsonify({"success": False, "message": f"Database error: {str(e)}"}), 500

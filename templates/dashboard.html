@@ -24,11 +24,17 @@
             </div>
             
             <nav class="sidebar-menu">
-                <button class="menu-item active" data-target="sequential-tab">Sequential Generation</button>
-                <button class="menu-item" data-target="customer-pdf-tab">Customer PDF Operations</button>
-                <button class="menu-item" data-target="reports-tab">Operational Reports</button>
-                {% if user_role == 'Admin' %}
-                <button class="menu-item" data-target="user-management-tab">User Management</button>
+                {% if can_generate %}
+                <button class="menu-item {% if can_generate %}active{% endif %}" data-target="sequential-tab">Sequential Generation</button>
+                {% endif %}
+                {% if can_import %}
+                <button class="menu-item {% if not can_generate and can_import %}active{% endif %}" data-target="customer-pdf-tab">Customer PDF Operations</button>
+                {% endif %}
+                {% if can_reports %}
+                <button class="menu-item {% if not can_generate and not can_import and can_reports %}active{% endif %}" data-target="reports-tab">Operational Reports</button>
+                {% endif %}
+                {% if can_users %}
+                <button class="menu-item {% if not can_generate and not can_import and not can_reports and can_users %}active{% endif %}" data-target="user-management-tab">User Management</button>
                 {% endif %}
             </nav>
             
@@ -47,7 +53,8 @@
             <div id="global-alert" class="alert hide"></div>
 
             <!-- Tab Content: Sequential Generation -->
-            <section id="sequential-tab" class="tab-pane active glass">
+            {% if can_generate %}
+            <section id="sequential-tab" class="tab-pane {% if can_generate %}active{% endif %} glass">
                 <h3>Sequential Generation & Label Printing</h3>
                 <div class="tab-layout">
                     <div class="controls-panel">
@@ -111,9 +118,11 @@
                     </div>
                 </div>
             </section>
+            {% endif %}
 
             <!-- Tab Content: Customer PDF Operations -->
-            <section id="customer-pdf-tab" class="tab-pane glass">
+            {% if can_import %}
+            <section id="customer-pdf-tab" class="tab-pane {% if not can_generate and can_import %}active{% endif %} glass">
                 <h3>Customer PDF QR Parsing & Sheet Printing</h3>
                 <div class="tab-layout">
                     <div class="controls-panel">
@@ -127,30 +136,28 @@
                             
                             <div class="form-group">
                                 <label for="pdf-regex">Regex Pattern (QR Code format)</label>
-                                <input type="text" id="pdf-regex" name="regex_pattern" class="form-control" value="\b\d{16}\b" required>
-                                <small class="form-text text-muted">Default pattern \b\d{16}\b scans for exactly 16-digit barcodes.</small>
+                                <input type="text" id="pdf-regex" name="regex_pattern" class="form-control" placeholder="e.g., \b\d{16}\b" value="\b\d{16}\b" required>
+                                <span class="form-text text-muted">Default pattern \b\d{16}\b scans for exactly 16-digit barcodes.</span>
                             </div>
                             
                             <div class="form-group">
                                 <label for="pdf-file">Select Customer PDF File</label>
-                                <input type="file" id="pdf-file" name="pdf_file" class="form-control-file" accept="application/pdf" required>
+                                <input type="file" id="pdf-file" name="pdf_file" class="form-control-file" accept=".pdf" required>
                             </div>
                             
                             <button type="submit" id="btn-import-pdf" class="btn btn-primary btn-block">Verify and Import PDF</button>
                         </form>
                         
-                        <div id="import-progress-container" class="form-group hide">
-                            <label>Parsing PDF file... Please wait.</label>
-                            <div class="progress-bar-outer">
-                                <div id="import-progress-inner" class="progress-bar-inner" style="width: 0%;"></div>
-                            </div>
+                        <div id="import-progress-container" class="progress-bar card hide">
+                            <div id="import-progress-inner" class="progress-bar-fill" style="width: 0%;"></div>
                         </div>
-
-                        <div class="card mt-4 print-options-card">
+                        
+                        <div class="pdf-print-actions mt-4 card">
                             <h4>Printing Page Config</h4>
-                            <div class="form-group-checkbox">
-                                <input type="checkbox" id="pdf-range-check">
-                                <label for="pdf-range-check">Print Custom Page Range</label>
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: normal;">
+                                    <input type="checkbox" id="pdf-range-check"> Print Custom Page Range
+                                </label>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col">
@@ -190,9 +197,11 @@
                     </div>
                 </div>
             </section>
+            {% endif %}
 
             <!-- Tab Content: Operational Reports -->
-            <section id="reports-tab" class="tab-pane glass">
+            {% if can_reports %}
+            <section id="reports-tab" class="tab-pane {% if not can_generate and not can_import and can_reports %}active{% endif %} glass">
                 <h3>Operational SQL Audit Reports</h3>
                 <div class="report-filters card">
                     <div class="form-row align-center">
@@ -228,10 +237,11 @@
                     </div>
                 </div>
             </section>
+            {% endif %}
 
             <!-- Tab Content: User Management (Admin Only) -->
-            {% if user_role == 'Admin' %}
-            <section id="user-management-tab" class="tab-pane glass">
+            {% if can_users %}
+            <section id="user-management-tab" class="tab-pane {% if not can_generate and not can_import and not can_reports and can_users %}active{% endif %} glass">
                 <h3>User Master Credentials Management</h3>
                 <div class="tab-layout">
                     <div class="controls-panel">
@@ -250,6 +260,27 @@
                                 <option value="Supervisor">Supervisor</option>
                                 <option value="Admin">Admin</option>
                             </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>User Rights / Permissions</label>
+                            <div class="permissions-checkboxes card" style="padding: 10px; background: rgba(15,23,42,0.4); display: flex; flex-direction: column; gap: 8px; margin-top: 5px; border: 1px solid var(--border-color); border-radius: 8px;">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: normal; margin: 0;">
+                                    <input type="checkbox" id="perm-generate" checked> Sequential Generation
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: normal; margin: 0;">
+                                    <input type="checkbox" id="perm-import"> Customer PDF Operations
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: normal; margin: 0;">
+                                    <input type="checkbox" id="perm-reprint"> Approve Reprints
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: normal; margin: 0;">
+                                    <input type="checkbox" id="perm-reports"> Operational Reports
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: normal; margin: 0;">
+                                    <input type="checkbox" id="perm-users"> User Management
+                                </label>
+                            </div>
                         </div>
                         
                         <div class="crud-buttons">
