@@ -321,6 +321,10 @@ body {
     gap: 12px;
 }
 
+.form-row label {
+    white-space: nowrap;
+}
+
 .col {
     flex: 1;
 }
