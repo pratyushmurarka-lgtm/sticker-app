@@ -610,6 +610,27 @@ document.getElementById("pdf-import-form").addEventListener("submit", async (e) 
     }
 });
 
+// Auto-detect and suggest regex pattern based on filename and model selection (matching VB6 functionality)
+function autoDetectRegex() {
+    const fileInput = document.getElementById("pdf-file");
+    const modelSelect = document.getElementById("pdf-item-select");
+    const regexInput = document.getElementById("pdf-regex");
+    
+    const fileName = fileInput.files[0] ? fileInput.files[0].name.toLowerCase() : "";
+    const modelCode = modelSelect.value.toLowerCase();
+    
+    if (fileName.includes("ce-") || modelCode.includes("ce-") || modelCode.includes("ce")) {
+        regexInput.value = "\\bCE\\d{7}\\b|\\bU-\\d{5}\\b";
+    } else if (fileName.includes("hd-") || fileName.includes("hd_") || modelCode.includes("hd-") || modelCode.includes("hd") || modelCode.startsWith("frc")) {
+        regexInput.value = "\\bHD\\d{7}\\b";
+    } else {
+        regexInput.value = "\\b\\d{16}\\b"; // Default fallback
+    }
+}
+
+document.getElementById("pdf-file").addEventListener("change", autoDetectRegex);
+document.getElementById("pdf-item-select").addEventListener("change", autoDetectRegex);
+
 // Printing/Reprinting Selected PDF
 document.getElementById("btn-print-pdf").addEventListener("click", () => {
     if (!selectedPdfId || !printAgentConnected) return;
