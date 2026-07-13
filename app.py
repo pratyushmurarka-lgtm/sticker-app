@@ -526,9 +526,8 @@ def get_qr_image():
         return "Missing text", 400
     try:
         qr = segno.make(text, error='M')
-        qr_img = qr.to_pil(scale=10, border=1)
         buf = io.BytesIO()
-        qr_img.save(buf, format="PNG")
+        qr.save(buf, kind='png', scale=10, border=1)
         buf.seek(0)
         return send_file(buf, mimetype="image/png")
     except Exception as e:

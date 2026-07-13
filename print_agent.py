@@ -3,6 +3,7 @@ import sys
 import json
 import base64
 import tempfile
+import io
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import win32print
 import win32ui
@@ -168,10 +169,12 @@ class CORSHTTPRequestHandler(BaseHTTPRequestHandler):
                     label_text = qr_value
                     
                 # 2. Draw QR code
-                # Generate QR code PIL image using segno
+                # Generate QR code PIL image using buffer-based method to bypass segno plugin load issues
                 qr = segno.make(qr_value, error='M')
-                # Scale up QR code to label size for crisp printing
-                qr_img = qr.to_pil(scale=10, border=1)
+                buf = io.BytesIO()
+                qr.save(buf, kind='png', scale=10, border=1)
+                buf.seek(0)
+                qr_img = Image.open(buf)
                 
                 left_dots = left_margin_dots + i * (label_size_dots + gap_dots)
                 right_dots = left_dots + label_size_dots
