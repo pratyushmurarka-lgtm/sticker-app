@@ -171,10 +171,11 @@ class CORSHTTPRequestHandler(BaseHTTPRequestHandler):
                     
                 elif mode == "sequential":
                     qrs = data.get("qrs", [])
-                    label_size_mm = float(data.get("label_size", 25))
+                    label_width_mm = float(data.get("label_width", 25))
+                    label_height_mm = float(data.get("label_height", 25))
                     gap_mm = float(data.get("gap", 3))
                     top_margin_mm = float(data.get("top_margin", 5))
-                    success = self.print_sequential(qrs, printer_name, label_size_mm, gap_mm, top_margin_mm)
+                    success = self.print_sequential(qrs, printer_name, label_width_mm, label_height_mm, gap_mm, top_margin_mm)
                 else:
                     raise ValueError(f"Unknown mode: {mode}")
                     
@@ -276,7 +277,7 @@ class CORSHTTPRequestHandler(BaseHTTPRequestHandler):
             import threading
             threading.Thread(target=cleanup).start()
 
-    def print_sequential(self, qrs, default_printer, label_size_mm, gap_mm, top_margin_mm):
+    def print_sequential(self, qrs, default_printer, label_width_mm, label_height_mm, gap_mm, top_margin_mm):
         total_qrs = len(qrs)
         if total_qrs == 0:
             return True
@@ -316,7 +317,8 @@ class CORSHTTPRequestHandler(BaseHTTPRequestHandler):
             mm_to_dot_x = dpi_x / 25.4
             mm_to_dot_y = dpi_y / 25.4
             
-            label_size_dots = int(label_size_mm * mm_to_dot_x)
+            w_dots = int(label_width_mm * mm_to_dot_x)
+            h_dots = int(label_height_mm * mm_to_dot_y)
             gap_dots = int(gap_mm * mm_to_dot_x)
             top_margin_dots = int(top_margin_mm * mm_to_dot_y)
             left_margin_dots = int(3.0 * mm_to_dot_x)
@@ -326,11 +328,12 @@ class CORSHTTPRequestHandler(BaseHTTPRequestHandler):
             for p in range(max_pages):
                 hdc.StartPage()
                 
-                font_height = int(3.0 * mm_to_dot_y)
+                # Dynamic font size matching label height
+                font_height = int(max(2.0, min(3.5, label_height_mm * 0.12)) * mm_to_dot_y)
                 font = win32ui.CreateFont({
                     "name": "Calibri",
                     "height": font_height,
-                    "weight": win32con.FW_NORMAL,
+                    "weight": win32con.FW_BOLD,
                 })
                 hdc.SelectObject(font)
                 
@@ -353,19 +356,36 @@ class CORSHTTPRequestHandler(BaseHTTPRequestHandler):
                     buf.seek(0)
                     qr_img = Image.open(buf)
                     
-                    left_dots = left_margin_dots + i * (label_size_dots + gap_dots)
-                    right_dots = left_dots + label_size_dots
+                    left_dots = left_margin_dots + i * (w_dots + gap_dots)
                     top_dots = top_margin_dots
-                    bottom_dots = top_dots + label_size_dots
                     
-                    dib = ImageWin.Dib(qr_img)
-                    dib.draw(hdc.GetSafeHdc(), (left_dots, top_dots, right_dots, bottom_dots))
-                    
-                    text_top = bottom_dots + int(1.0 * mm_to_dot_y)
-                    text_width = hdc.GetTextExtent(label_text)[0]
-                    text_left = left_dots + (label_size_dots - text_width) // 2
-                    
-                    hdc.TextOut(text_left, text_top, label_text)
+                    if w_dots > h_dots * 1.3:
+                        # Side-by-side Layout (QR left, text right)
+                        qr_size_dots = h_dots - int(2.0 * mm_to_dot_y) # 2mm vertical padding
+                        
+                        # Draw QR
+                        dib = ImageWin.Dib(qr_img)
+                        dib.draw(hdc.GetSafeHdc(), (left_dots + int(1.0 * mm_to_dot_x), top_dots + int(1.0 * mm_to_dot_y), left_dots + qr_size_dots + int(1.0 * mm_to_dot_x), top_dots + qr_size_dots + int(1.0 * mm_to_dot_y)))
+                        
+                        # Draw text on the right side, vertically centered
+                        text_left = left_dots + qr_size_dots + int(3.0 * mm_to_dot_x)
+                        text_top = top_dots + (h_dots - font_height) // 2
+                        hdc.TextOut(text_left, text_top, label_text)
+                    else:
+                        # Stacked Layout (QR top, text below)
+                        qr_size_dots = min(w_dots, h_dots) - int(6.0 * mm_to_dot_y) # Leave room for margins and text
+                        qr_x_dots = left_dots + (w_dots - qr_size_dots) // 2
+                        qr_y_dots = top_dots + int(1.0 * mm_to_dot_y)
+                        
+                        # Draw QR
+                        dib = ImageWin.Dib(qr_img)
+                        dib.draw(hdc.GetSafeHdc(), (qr_x_dots, qr_y_dots, qr_x_dots + qr_size_dots, qr_y_dots + qr_size_dots))
+                        
+                        # Draw text centered below QR
+                        text_top = qr_y_dots + qr_size_dots + int(1.0 * mm_to_dot_y)
+                        text_width = hdc.GetTextExtent(label_text)[0]
+                        text_left = left_dots + (w_dots - text_width) // 2
+                        hdc.TextOut(text_left, text_top, label_text)
                     
                 hdc.EndPage()
                 

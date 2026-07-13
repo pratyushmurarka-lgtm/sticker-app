@@ -220,14 +220,42 @@ function drawPreviewPage() {
     
     if (currentGeneratedQRs.length === 0) return;
     
-    const labelsPerPage = 4;
-    const labelSize = 100;
-    const gap = 20;
-    const leftMargin = 30;
-    const topMargin = 40;
+    // Retrieve inputs (mm)
+    const labelWidthMm = parseFloat(document.getElementById("seq-label-width").value) || 25;
+    const labelHeightMm = parseFloat(document.getElementById("seq-label-height").value) || 25;
+    const gapMm = parseFloat(document.getElementById("seq-gap").value) || 3;
+    const topMarginMm = parseFloat(document.getElementById("seq-top-margin").value) || 5;
+    
+    // Convert mm to pixels at a default base scale of 4 pixels per mm
+    const baseScale = 4.0;
+    let w = labelWidthMm * baseScale;
+    let h = labelHeightMm * baseScale;
+    let gap = gapMm * baseScale;
+    let topMargin = topMarginMm * baseScale;
+    let leftMargin = 30.0;
+    
+    // Auto-scale to fit canvas width (600px)
+    const totalRowWidth = 4 * w + 3 * gap;
+    const maxAvailableWidth = canvas.width - 60; // 30px margins on both sides
+    if (totalRowWidth > maxAvailableWidth) {
+        const scale = maxAvailableWidth / totalRowWidth;
+        w *= scale;
+        h *= scale;
+        gap *= scale;
+        topMargin *= scale;
+    }
+    
+    // Auto-scale canvas height dynamically if height is large
+    if (topMargin + h + 25 > canvas.height) {
+        canvas.height = topMargin + h + 35;
+    } else {
+        canvas.height = 250; // Reset to default
+    }
     
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    const labelsPerPage = 4;
     
     for (let i = 0; i < labelsPerPage; i++) {
         const idx = (previewCurrentPage - 1) * labelsPerPage + i;
@@ -237,25 +265,41 @@ function drawPreviewPage() {
         const parts = qrValue.split("|");
         const labelText = parts.length >= 7 ? `${parts[2].trim()}-${parts[6].trim()}` : qrValue;
         
-        const x = leftMargin + i * (labelSize + gap);
+        const x = leftMargin + i * (w + gap);
         
         // 1. Draw outer label border
         ctx.strokeStyle = "#94a3b8";
         ctx.lineWidth = 1;
-        ctx.strokeRect(x, topMargin, labelSize, labelSize);
+        ctx.strokeRect(x, topMargin, w, h);
         
         // 2. Draw actual QR code from server
         const img = new Image();
         img.src = `/api/qr_image?text=${encodeURIComponent(qrValue)}`;
         img.onload = () => {
-            ctx.drawImage(img, x + 2, topMargin + 2, labelSize - 4, labelSize - 4);
+            if (w > h * 1.3) {
+                // Rectangular Layout (Side-by-Side)
+                const qrSize = h - 6;
+                ctx.drawImage(img, x + 3, topMargin + 3, qrSize, qrSize);
+                
+                ctx.fillStyle = "#000000";
+                ctx.font = `bold ${Math.max(8, Math.min(11, h * 0.35))}px Outfit, Arial, sans-serif`;
+                ctx.textAlign = "left";
+                ctx.textBaseline = "middle";
+                ctx.fillText(labelText, x + qrSize + 8, topMargin + h / 2);
+            } else {
+                // Square/Vertical Layout (Stacked)
+                const qrSize = Math.min(w, h) - 20;
+                const qrX = x + (w - qrSize) / 2;
+                const qrY = topMargin + (h - qrSize) / 2 - 5;
+                ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+                
+                ctx.fillStyle = "#000000";
+                ctx.font = `bold ${Math.max(7, Math.min(10, h * 0.3))}px Outfit, Arial, sans-serif`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "bottom";
+                ctx.fillText(labelText, x + w / 2, topMargin + h - 4);
+            }
         };
-        
-        // 3. Draw description label text below QR code
-        ctx.fillStyle = "#000000";
-        ctx.font = "bold 11px Outfit, Arial, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(labelText, x + labelSize / 2, topMargin + labelSize + 18);
     }
     
     // Update preview page UI controls
@@ -283,7 +327,8 @@ document.getElementById("btn-print-sequential").addEventListener("click", async 
     if (!printAgentConnected || currentGeneratedQRs.length === 0) return;
     
     const printer = "";
-    const labelSize = document.getElementById("seq-label-size").value;
+    const labelWidth = document.getElementById("seq-label-width").value;
+    const labelHeight = document.getElementById("seq-label-height").value;
     const gap = document.getElementById("seq-gap").value;
     const topMargin = document.getElementById("seq-top-margin").value;
     
@@ -291,7 +336,8 @@ document.getElementById("btn-print-sequential").addEventListener("click", async 
         mode: "sequential",
         printer_name: printer,
         qrs: currentGeneratedQRs,
-        label_size: labelSize,
+        label_width: labelWidth,
+        label_height: labelHeight,
         gap: gap,
         top_margin: topMargin
     };
