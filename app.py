@@ -103,7 +103,7 @@ def dashboard():
     items_count = database.query_row("""
         SELECT COUNT(1) AS ItemCount 
         FROM ItemMaster 
-        WHERE Blocked = 0 AND ItemType IN (81,13414,94,4796,4846,82,22)
+        WHERE Blocked = 0 AND ItemType IN (81,13414,94,4796,4846,82,22,97,10991,4797,96,98,136,147,4847)
     """)
     loaded_count = items_count["ItemCount"] if items_count else 0
     
@@ -128,7 +128,7 @@ def get_items():
     sql = """
         SELECT CodeStr, Name 
         FROM ItemMaster 
-        WHERE Blocked = 0 AND ItemType IN (81,13414,94,4796,4846,82,22) 
+        WHERE Blocked = 0 AND ItemType IN (81,13414,94,4796,4846,82,22,97,10991,4797,96,98,136,147,4847) 
         ORDER BY CodeStr
     """
     items = database.query_all(sql)
